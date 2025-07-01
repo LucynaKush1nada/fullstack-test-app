@@ -1,54 +1,51 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Kafka } from 'kafkajs';
 import { WarehouseItem } from 'src/entities/warehous-item.entity';
 import { Repository } from 'typeorm';
+import { InventoryUpdateDto } from './dto/inventory-update.dto';
 
 @Injectable()
 export class WarehouseService {
-  private kafka = new Kafka({
-    brokers: ['localhost:9092'],
-  });
+  private readonly DEFAULT_INITIAL_QUANTITY = 100;
 
   constructor(
     @InjectRepository(WarehouseItem)
     private warehouseRepository: Repository<WarehouseItem>,
   ) { }
 
-  async onModuleInit() {
-    await this.setupKafkaConsumer();
-  }
+  async updateInventory(updateDto: InventoryUpdateDto): Promise<WarehouseItem> {
+    const { productName, quantity } = updateDto;
 
-  private async setupKafkaConsumer() {
-    const consumer = this.kafka.consumer({ groupId: 'warehouse-group' });
-    await consumer.connect();
-    await consumer.subscribe({ topic: 'order_created' });
-
-    await consumer.run({
-      eachMessage: async ({ message }) => {
-        const order = JSON.parse(message.value.toString());
-        await this.processOrder(order);
-      },
-    });
-  }
-
-  private async processOrder(order: { productName: string; quantity: number }) {
     let item = await this.warehouseRepository.findOne({
-      where: { productName: order.productName },
+      where: { productName },
     });
 
     if (!item) {
       item = this.warehouseRepository.create({
-        productName: order.productName,
-        quantity: 100,
+        productName,
+        quantity: this.DEFAULT_INITIAL_QUANTITY,
       });
     }
 
-    item.quantity -= order.quantity;
-    await this.warehouseRepository.save(item);
+    if (item.quantity < quantity) {
+      throw new BadRequestException(
+        `Недостаточно товара "${productName}". Доступно: ${item.quantity}, требуется: ${quantity}`
+      );
+    }
 
-    console.log(
-      `Обновлен остаток для "${order.productName}": ${item.quantity}`,
-    );
+    item.quantity -= quantity;
+    const savedItem = await this.warehouseRepository.save(item);
+
+    return savedItem;
+  }
+
+  async getInventoryItem(productName: string): Promise<WarehouseItem | null> {
+    return this.warehouseRepository.findOne({
+      where: { productName },
+    });
+  }
+
+  async getAllInventory(): Promise<WarehouseItem[]> {
+    return this.warehouseRepository.find();
   }
 }

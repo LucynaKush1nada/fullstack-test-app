@@ -1,5 +1,6 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 import { User } from './user.entity';
+import { OrderStatus } from 'src/orders/dto/update-order-status.dto';
 
 @Entity()
 export class Order {
@@ -11,6 +12,15 @@ export class Order {
 
     @Column()
     quantity: number;
+
+    @Column({ type: 'enum', enum: OrderStatus, default: OrderStatus.CREATED })
+    status: OrderStatus;
+
+    @CreateDateColumn()
+    createdAt: Date;
+
+    @UpdateDateColumn()
+    updatedAt: Date;
 
     @ManyToOne(() => User, (user) => user.orders)
     user: User;

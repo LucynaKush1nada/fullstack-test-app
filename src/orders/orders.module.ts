@@ -4,6 +4,7 @@ import { OrdersService } from './orders.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Order } from 'src/entities/order.entity';
 import { AuthModule } from 'src/auth/auth.module';
+import { OrderEventsListener } from './events/order-events.listener';
 
 @Module({
   imports: [
@@ -11,6 +12,6 @@ import { AuthModule } from 'src/auth/auth.module';
     AuthModule,
   ],
   controllers: [OrdersController],
-  providers: [OrdersService],
+  providers: [OrdersService, OrderEventsListener],
 })
 export class OrdersModule { }

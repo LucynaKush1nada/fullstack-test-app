@@ -5,6 +5,8 @@ import { AuthModule } from './auth/auth.module';
 import { OrdersModule } from './orders/orders.module';
 import { WarehouseModule } from './warehouse/warehouse.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { EventEmitterModule } from '@nestjs/event-emitter';
+import { KafkaModule } from './kafka/kafka.module';
 
 @Module({
   imports: [
@@ -18,6 +20,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
       synchronize: true, // В продакшене false!
     }),
+    EventEmitterModule.forRoot(),
+    KafkaModule,
     AuthModule,
     OrdersModule,
     WarehouseModule
