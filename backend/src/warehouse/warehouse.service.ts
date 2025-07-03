@@ -6,42 +6,37 @@ import { InventoryUpdateDto } from './dto/inventory-update.dto';
 
 @Injectable()
 export class WarehouseService {
-  private readonly DEFAULT_INITIAL_QUANTITY = 100;
-
   constructor(
     @InjectRepository(WarehouseItem)
     private warehouseRepository: Repository<WarehouseItem>,
   ) { }
 
-  async updateInventory(updateDto: InventoryUpdateDto): Promise<WarehouseItem> {
-    const { productName, quantity } = updateDto;
+  async updateInventory(productId: number, updateDto: InventoryUpdateDto): Promise<WarehouseItem> {
+    const { productName, quantity: orderQuantity } = updateDto;
 
     let item = await this.warehouseRepository.findOne({
-      where: { productName },
+      where: { id: productId },
     });
 
     if (!item) {
-      item = this.warehouseRepository.create({
-        productName,
-        quantity: this.DEFAULT_INITIAL_QUANTITY,
-      });
+      throw new Error(`Товар "${productName}" не найден на складе`);
     }
 
-    if (item.quantity < quantity) {
+    if (item.quantity < orderQuantity) {
       throw new BadRequestException(
-        `Недостаточно товара "${productName}". Доступно: ${item.quantity}, требуется: ${quantity}`
+        `Недостаточно товара "${productName}". Доступно: ${item.quantity}, требуется: ${orderQuantity}`
       );
     }
 
-    item.quantity -= quantity;
+    item.quantity -= orderQuantity;
     const savedItem = await this.warehouseRepository.save(item);
 
     return savedItem;
   }
 
-  async getInventoryItem(productName: string): Promise<WarehouseItem | null> {
+  async getInventoryItem(productId: number): Promise<WarehouseItem | null> {
     return this.warehouseRepository.findOne({
-      where: { productName },
+      where: { id: productId },
     });
   }
 
