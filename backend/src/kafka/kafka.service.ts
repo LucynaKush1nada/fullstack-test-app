@@ -30,19 +30,15 @@ export class KafkaService implements OnModuleInit, OnModuleDestroy {
     for (const consumer of this.consumers.values()) {
       await consumer.disconnect();
     }
-
   }
 
   async sendMessage<T extends KafkaMessage>(topic: KafkaTopics, message: T) {
     try {
-
       await this.producer.send({
         topic,
         messages: [{ value: JSON.stringify(message) }],
       });
-
     } catch (error) {
-      console.error(`❌ [KafkaService] Failed to send message to topic ${topic}:`, error);
       throw error;
     }
   }
@@ -79,7 +75,6 @@ export class KafkaService implements OnModuleInit, OnModuleDestroy {
 
       this.consumers.set(consumerKey, consumer);
       this.messageHandlers.set(consumerKey, []);
-
     }
 
     this.messageHandlers.get(consumerKey)!.push(handler);

@@ -26,7 +26,7 @@ export class WarehouseEventsListener {
         return;
       }
 
-      await this.warehouseService.updateInventory(updateDto);
+      await this.warehouseService.updateInventory(message.id, updateDto);
     } catch (error) {
       console.error('Failed to process order for inventory update:', error);
     }
